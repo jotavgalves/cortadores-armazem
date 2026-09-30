@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=2">
+  <link rel="stylesheet" href="./styles.css?v=3">
 </head>
 <body>
   <div class="app-shell">
@@ -26,8 +26,14 @@
     </header>
 
     <section class="filters panel">
+      <div class="quick-periods" aria-label="Período rápido">
+        <button type="button" data-range="today">Hoje</button>
+        <button type="button" data-range="7days">7 dias</button>
+        <button type="button" data-range="month" class="active">Este mês</button>
+        <button type="button" data-range="all">Tudo</button>
+      </div>
       <div class="filter-group grow">
-        <label>Período</label>
+        <label>Período personalizado</label>
         <div class="date-row">
           <input id="dateFrom" class="input" type="date">
           <span>até</span>
@@ -49,35 +55,30 @@
           <option value="NÃO INFORMADO">Não informado</option>
         </select>
       </div>
-      <div class="quick-periods">
-        <button type="button" data-range="today">Hoje</button>
-        <button type="button" data-range="month" class="active">Este mês</button>
-        <button type="button" data-range="all">Tudo</button>
-      </div>
     </section>
 
     <div id="banner" class="banner"></div>
 
     <section class="kpi-grid">
       <article class="kpi panel">
-        <span>Peças cortadas</span>
+        <span>Produção</span>
         <strong id="totalPieces">0</strong>
-        <small id="piecesHint">no período selecionado</small>
+        <small id="piecesHint">peças no período selecionado</small>
       </article>
       <article class="kpi panel">
-        <span>Eventos de corte</span>
-        <strong id="totalEvents">0</strong>
-        <small>cada linha válida da planilha</small>
-      </article>
-      <article class="kpi panel">
-        <span>Pedidos diferentes</span>
+        <span>Pedidos</span>
         <strong id="uniqueOrders">0</strong>
-        <small>ID preservado exatamente como veio</small>
+        <small>IDs diferentes no período</small>
       </article>
       <article class="kpi panel">
-        <span>Cortadores ativos</span>
-        <strong id="activeCutters">0</strong>
-        <small>no período selecionado</small>
+        <span>Média por dia</span>
+        <strong id="dailyAverage">0</strong>
+        <small id="dailyAverageHint">0 dias com produção</small>
+      </article>
+      <article class="kpi panel">
+        <span>Eventos</span>
+        <strong id="totalEvents">0</strong>
+        <small>linhas de corte no período</small>
       </article>
     </section>
 
@@ -85,50 +86,73 @@
       <article class="cutter-card panel ednilson">
         <div class="cutter-head"><span>EDNILSON</span><b id="ednilsonShare">0%</b></div>
         <strong id="ednilsonPieces">0 peças</strong>
-        <small id="ednilsonEvents">0 eventos</small>
+        <div class="share-track"><i id="ednilsonBar"></i></div>
+        <div class="cutter-meta"><span id="ednilsonOrders">0 pedidos</span><span id="ednilsonEvents">0 eventos</span></div>
       </article>
-      <article class="cutter-card panel veronica">
-        <div class="cutter-head"><span>VERÔNICA</span><b id="veronicaShare">0%</b></div>
-        <strong id="veronicaPieces">0 peças</strong>
-        <small id="veronicaEvents">0 eventos</small>
-      </article>
+
       <article class="cutter-card panel luana">
         <div class="cutter-head"><span>LUANA</span><b id="luanaShare">0%</b></div>
         <strong id="luanaPieces">0 peças</strong>
-        <small id="luanaEvents">0 eventos</small>
+        <div class="share-track"><i id="luanaBar"></i></div>
+        <div class="cutter-meta"><span id="luanaOrders">0 pedidos</span><span id="luanaEvents">0 eventos</span></div>
+      </article>
+
+      <article class="cutter-card panel veronica">
+        <div class="cutter-head"><span>VERÔNICA</span><b id="veronicaShare">0%</b></div>
+        <strong id="veronicaPieces">0 peças</strong>
+        <div class="share-track"><i id="veronicaBar"></i></div>
+        <div class="cutter-meta"><span id="veronicaOrders">0 pedidos</span><span id="veronicaEvents">0 eventos</span></div>
+      </article>
+
+      <article class="cutter-card panel deygleison">
+        <div class="cutter-head"><span>DEYGLEISON</span><b id="deygleisonShare">0%</b></div>
+        <strong id="deygleisonPieces">0 peças</strong>
+        <div class="share-track"><i id="deygleisonBar"></i></div>
+        <div class="cutter-meta"><span id="deygleisonOrders">0 pedidos</span><span id="deygleisonEvents">0 eventos</span></div>
+      </article>
+
+      <article class="cutter-card panel nao-informado">
+        <div class="cutter-head"><span>NÃO INFORMADO</span><b id="naoInformadoShare">0%</b></div>
+        <strong id="naoInformadoPieces">0 peças</strong>
+        <div class="share-track"><i id="naoInformadoBar"></i></div>
+        <div class="cutter-meta"><span id="naoInformadoOrders">0 pedidos</span><span id="naoInformadoEvents">0 eventos</span></div>
       </article>
     </section>
 
-    <section class="grid-2">
-      <article class="panel chart-panel">
-        <div class="section-head">
-          <div><span class="eyebrow">HISTÓRICO</span><h2>Peças por dia</h2></div>
-          <span id="chartCaption">—</span>
-        </div>
-        <canvas id="dailyChart"></canvas>
-      </article>
+    <section class="panel chart-panel full-chart">
+      <div class="section-head">
+        <div><span class="eyebrow">HISTÓRICO</span><h2>Produção por dia</h2></div>
+        <span id="chartCaption">—</span>
+      </div>
+      <div class="chart-legend" id="chartLegend"></div>
+      <canvas id="dailyChart"></canvas>
+    </section>
 
-      <article class="panel">
+    <section class="insight-grid">
+      <article class="panel insight-panel">
         <div class="section-head">
           <div><span class="eyebrow">TIPO DE CORTE</span><h2>Corrido x localizado</h2></div>
         </div>
         <div class="type-list">
-          <div><span>Corrido</span><b id="continuousPieces">0</b><small id="continuousEvents">0 eventos</small></div>
-          <div><span>Localizado</span><b id="localizedPieces">0</b><small id="localizedEvents">0 eventos</small></div>
-          <div><span>Não informado</span><b id="unknownPieces">0</b><small id="unknownEvents">0 eventos</small></div>
+          <div><span>Corrido</span><b id="continuousPieces">0 peças</b><small id="continuousEvents">0 eventos</small></div>
+          <div><span>Localizado</span><b id="localizedPieces">0 peças</b><small id="localizedEvents">0 eventos</small></div>
+          <div><span>Não informado</span><b id="unknownPieces">0 peças</b><small id="unknownEvents">0 eventos</small></div>
         </div>
-        <div class="quality-box">
-          <span>Qualidade dos dados</span>
-          <b id="qualityText">—</b>
-          <small id="qualityHint">—</small>
+      </article>
+
+      <article class="panel insight-panel quality-panel">
+        <div class="section-head">
+          <div><span class="eyebrow">QUALIDADE DOS DADOS</span><h2>Registros com problema</h2></div>
         </div>
+        <strong class="problem-count" id="qualityText">0</strong>
+        <p id="qualityHint">Sem alertas no período.</p>
       </article>
     </section>
 
     <section class="panel table-panel">
       <div class="section-head">
-        <div><span class="eyebrow">REGISTROS</span><h2>Eventos de corte</h2></div>
-        <input id="searchInput" class="input search" placeholder="Buscar ID do pedido ou cortador">
+        <div><span class="eyebrow">REGISTROS</span><h2>Últimos cortes</h2></div>
+        <input id="searchInput" class="input search" placeholder="Buscar pedido ou cortador">
       </div>
       <div class="table-wrap">
         <table>
@@ -136,10 +160,9 @@
             <tr>
               <th>Data</th>
               <th>Cortador</th>
-              <th>ID_PEDIDO</th>
-              <th>Tipo</th>
+              <th>Pedido</th>
               <th>Peças</th>
-              <th>Origem</th>
+              <th>Tipo</th>
               <th>Leitura</th>
             </tr>
           </thead>
@@ -149,6 +172,6 @@
     </section>
   </div>
 
-
-  <script src="./app.js?v=2"></script>\n</body>
+  <script src="./app.js?v=3"></script>
+</body>
 </html>
