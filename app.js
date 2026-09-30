@@ -88,7 +88,7 @@ function canonicalType(raw){
 function parsePieces(raw){
   const source=String(raw??'');
   const matches=[...source.matchAll(/\d+(?:[.,]\d+)?/g)].map(m=>m[0]);
-  if(!matches.length)return {value:null,warning:source.trim()?'Sem número reconhecível':'Quantidade vazia',ambiguous:true};
+  if(!matches.length)return {value:null,warning:source.trim()?'Sem número reconhecível':'Quantidade vazia',ambiguous:false};
   const value=Math.round(Number(matches[0].replace(',','.')));
   if(!Number.isFinite(value))return {value:null,warning:'Quantidade inválida',ambiguous:true};
   return {
