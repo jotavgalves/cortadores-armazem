@@ -1,7 +1,10 @@
 (()=>{
 'use strict';
 
-const STORAGE_KEY='cortadores_armazem_source_v1';
+const SPREADSHEET_ID='1o9JVEfpR03WCQfLYp8n2DLZe0VckLGWxKMsmxOtq6B8';
+const SPREADSHEET_URL='https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/edit?gid=0#gid=0';
+const MAIN_SHEET='CORTES EM GERAL';
+const AUTO_REFRESH_MS=60_000;
 const MAIN_CUTTERS=[
   {id:'ednilson',label:'Ednilson'},
   {id:'veronica',label:'Verônica'},
@@ -15,7 +18,7 @@ const HEADER_ALIASES={
   cutAt:['DATA DO CORTE','DATA CORTE','DATA/HORA DO CORTE']
 };
 
-const state={all:[],filtered:[],settings:{sheetUrl:'',sheetName:'CORTES EM GERAL'},loaded:false};
+const state={all:[],filtered:[],loaded:false,loading:false,lastSyncAt:0,quickRange:'month'};
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const nf=new Intl.NumberFormat('pt-BR');
@@ -126,15 +129,9 @@ function canonicalRow(row,sourceSheet){
     cutAtRaw:String(rawDate??'')
   };
 }
-function sheetIdFromUrl(url){
-  const m=String(url||'').match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
-  return m?m[1]:'';
-}
 function endpoint(){
-  const id=sheetIdFromUrl(state.settings.sheetUrl);
-  if(!id)throw new Error('Link da Google Sheets inválido.');
-  const sheet=encodeURIComponent(state.settings.sheetName||'CORTES EM GERAL');
-  return 'https://docs.google.com/spreadsheets/d/'+id+'/gviz/tq?tqx=out:csv&sheet='+sheet+'&t='+Date.now();
+  const sheet=encodeURIComponent(MAIN_SHEET);
+  return 'https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+sheet+'&t='+Date.now();
 }
 function formatDate(d){
   if(!d)return 'Data inválida';
@@ -151,31 +148,42 @@ function showBanner(text,type='error'){
 }
 function hideBanner(){ $('#banner').className='banner'; }
 
-async function loadData(){
-  if(!state.settings.sheetUrl){
-    showBanner('Informe o link da Google Sheets em “Fonte de dados”.');
-    $('#settingsDialog').showModal();
-    return;
+async function loadData(options={}){
+  const silent=!!options.silent;
+  if(state.loading)return;
+  state.loading=true;
+  const btn=$('#refreshBtn');
+  if(!silent){
+    btn.disabled=true;
+    $('#syncText').textContent='Carregando cortes...';
   }
-  const btn=$('#refreshBtn');btn.disabled=true;$('#syncText').textContent='Carregando cortes...';hideBanner();
+  hideBanner();
   try{
     const res=await fetch(endpoint(),{cache:'no-store'});
     if(!res.ok)throw new Error('Google Sheets respondeu HTTP '+res.status);
     const text=await res.text();
     const parsed=csvParse(text);
-    if(!parsed.length)throw new Error('A aba não retornou registros.');
-    state.all=parsed.map(r=>canonicalRow(r,state.settings.sheetName));
+    if(!parsed.length)throw new Error('A aba '+MAIN_SHEET+' não retornou registros.');
+    state.all=parsed.map(r=>canonicalRow(r,MAIN_SHEET));
     state.loaded=true;
+    state.lastSyncAt=Date.now();
     populateCutters();
-    establishInitialRange();
+
+    if(state.quickRange) setQuickRange(state.quickRange,false);
+    else establishInitialRange();
+
     applyFilters();
-    $('#syncText').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    $('#syncText').textContent='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' • automático a cada 1 min';
+
     const invalidDates=state.all.filter(x=>!x.cutAt).length;
     if(invalidDates)showBanner(invalidDates+' registro(s) têm data inválida e não entram nos filtros por período.');
   }catch(error){
-    showBanner('Não consegui carregar a planilha: '+error.message);
+    showBanner('Não consegui carregar a planilha: '+error.message+'. Confirme que ela permite leitura por link.');
     $('#syncText').textContent='Falha ao carregar dados';
-  }finally{btn.disabled=false;}
+  }finally{
+    state.loading=false;
+    btn.disabled=false;
+  }
 }
 function establishInitialRange(){
   if($('#dateFrom').value&&$('#dateTo').value)return;
@@ -306,8 +314,9 @@ function renderChart(rows){
 function escapeHtml(value){
   return String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
-function setQuickRange(mode){
-  $$('.quick-periods button').forEach(b=>b.classList.toggle('active',b.dataset.range===mode));
+function setQuickRange(mode,renderNow=true){
+  state.quickRange=mode;
+  $('.quick-periods button').forEach(b=>b.classList.toggle('active',b.dataset.range===mode));
   const dates=state.all.map(x=>x.cutAt).filter(Boolean).sort((a,b)=>a-b);
   if(!dates.length)return;
   const latest=dates[dates.length-1];
@@ -318,31 +327,25 @@ function setQuickRange(mode){
   }else{
     $('#dateFrom').value=isoDate(dates[0]);$('#dateTo').value=isoDate(latest);
   }
-  applyFilters();
-}
-function loadSettings(){
-  try{state.settings={...state.settings,...JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')};}catch(_){}
-  $('#sheetUrl').value=state.settings.sheetUrl||'';
-  $('#sheetName').value=state.settings.sheetName||'CORTES EM GERAL';
-}
-function saveSettings(){
-  state.settings.sheetUrl=$('#sheetUrl').value.trim();
-  state.settings.sheetName=$('#sheetName').value.trim()||'CORTES EM GERAL';
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(state.settings));
-  $('#settingsDialog').close();
-  state.all=[];state.filtered=[];state.loaded=false;
-  loadData();
+  if(renderNow)applyFilters();
 }
 
-$('#openSettings').addEventListener('click',()=>$('#settingsDialog').showModal());
-$('#saveSource').addEventListener('click',saveSettings);
-$('#refreshBtn').addEventListener('click',loadData);
-['dateFrom','dateTo','cutterFilter','typeFilter'].forEach(id=>$('#'+id).addEventListener('change',applyFilters));
+function clearQuickRange(){
+  state.quickRange=null;
+  $('.quick-periods button').forEach(b=>b.classList.remove('active'));
+}
+
+$('#openSheet').addEventListener('click',()=>window.open(SPREADSHEET_URL,'_blank','noopener,noreferrer'));
+$('#refreshBtn').addEventListener('click',()=>loadData());
+['dateFrom','dateTo'].forEach(id=>$('#'+id).addEventListener('change',()=>{clearQuickRange();applyFilters();}));
+['cutterFilter','typeFilter'].forEach(id=>$('#'+id).addEventListener('change',applyFilters));
 $('#searchInput').addEventListener('input',applyFilters);
-$$('[data-range]').forEach(b=>b.addEventListener('click',()=>setQuickRange(b.dataset.range)));
+$('[data-range]').forEach(b=>b.addEventListener('click',()=>setQuickRange(b.dataset.range)));
 window.addEventListener('resize',()=>{if(state.loaded)renderChart(state.filtered);});
+window.addEventListener('focus',()=>{if(Date.now()-state.lastSyncAt>30_000)loadData({silent:true});});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-state.lastSyncAt>30_000)loadData({silent:true});});
+setInterval(()=>loadData({silent:true}),AUTO_REFRESH_MS);
 
-loadSettings();
-if(state.settings.sheetUrl)loadData();else $('#settingsDialog').showModal();
+loadData();
 
 })();
