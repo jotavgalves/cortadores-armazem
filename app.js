@@ -7,13 +7,15 @@ const MAIN_SHEET='CORTES EM GERAL';
 const MAIN_GID='1211266709';
 const AUTO_REFRESH_MS=60_000;
 
-const MAIN_CUTTERS=[
-  {id:'ednilson',prefix:'ednilson',label:'Ednilson',color:'#9c78ff'},
-  {id:'luana',prefix:'luana',label:'Luana',color:'#6ca5ff'},
-  {id:'veronica',prefix:'veronica',label:'Verônica',color:'#5fd0b4'},
-  {id:'deygleison',prefix:'deygleison',label:'Deygleison',color:'#e6ba58'},
-  {id:'nao-informado',prefix:'naoInformado',label:'Não informado',color:'#7f8a9d'}
-];
+const PREFERRED_CUTTER_ORDER=['ednilson','luana','veronica','deygleison'];
+const CUTTER_COLORS={
+  ednilson:'#9c78ff',
+  luana:'#6ca5ff',
+  veronica:'#5fd0b4',
+  deygleison:'#e6ba58',
+  'nao-informado':'#7f8a9d'
+};
+const EXTRA_CUTTER_COLORS=['#d98cff','#62c8e5','#ef8d72','#8bd17c','#d6a8ff','#f2c96d','#68d3c1','#9db1ff'];
 
 const HEADER_ALIASES={
   cutter:['QUEM CORTOU','CORTADOR','RESPONSAVEL PELO CORTE'],
@@ -74,6 +76,16 @@ function rawField(row,aliases){
   }
   return '';
 }
+function displayCutterName(raw){
+  const cleaned=String(raw??'')
+    .replace(/[^\p{L}\p{N}\s.'-]/gu,' ')
+    .replace(/\s+/g,' ')
+    .trim();
+  if(!cleaned)return 'Não informado';
+  return cleaned
+    .toLocaleLowerCase('pt-BR')
+    .replace(/(^|[\s'-])(\p{L})/gu,(m,prefix,letter)=>prefix+letter.toLocaleUpperCase('pt-BR'));
+}
 function canonicalCutter(raw){
   const clean=normalizeText(raw);
   if(!clean)return {id:'nao-informado',label:'Não informado',known:false};
@@ -81,7 +93,33 @@ function canonicalCutter(raw){
   if(clean.includes('LUANA'))return {id:'luana',label:'Luana',known:true};
   if(clean.includes('VERONICA'))return {id:'veronica',label:'Verônica',known:true};
   if(clean.includes('DEYGLEISON')||clean.includes('DEIGLEISON'))return {id:'deygleison',label:'Deygleison',known:true};
-  return {id:'nao-informado',label:'Não informado',known:false};
+  return {
+    id:'cutter-'+clean.toLowerCase().replace(/\s+/g,'-'),
+    label:displayCutterName(raw),
+    known:true
+  };
+}
+function cutterColor(id){
+  if(CUTTER_COLORS[id])return CUTTER_COLORS[id];
+  let hash=0;
+  for(const ch of id)hash=((hash<<5)-hash)+ch.charCodeAt(0);
+  return EXTRA_CUTTER_COLORS[Math.abs(hash)%EXTRA_CUTTER_COLORS.length];
+}
+function cuttersFromRows(rows){
+  const map=new Map();
+  for(const row of rows){
+    if(!map.has(row.cutterId))map.set(row.cutterId,{id:row.cutterId,label:row.cutterName,color:cutterColor(row.cutterId)});
+  }
+  const priority=id=>{
+    if(id==='nao-informado')return 9999;
+    const index=PREFERRED_CUTTER_ORDER.indexOf(id);
+    return index>=0?index:100;
+  };
+  return [...map.values()].sort((a,b)=>{
+    const pa=priority(a.id),pb=priority(b.id);
+    if(pa!==pb)return pa-pb;
+    return a.label.localeCompare(b.label,'pt-BR');
+  });
 }
 function canonicalType(raw){
   const clean=normalizeText(raw);
@@ -180,8 +218,6 @@ async function loadData(options={}){
     state.all=parsed.map(r=>canonicalRow(r,MAIN_SHEET));
     state.loaded=true;
     state.lastSyncAt=Date.now();
-    populateCutters();
-
     if(state.quickRange)setQuickRange(state.quickRange,false);
     else establishInitialRange();
 
@@ -206,16 +242,25 @@ function establishInitialRange(){
   $('#dateFrom').value=isoDate(new Date(latest.getFullYear(),latest.getMonth(),1));
   $('#dateTo').value=isoDate(latest);
 }
-function populateCutters(){
-  const current=$('#cutterFilter').value;
-  $('#cutterFilter').innerHTML='<option value="all">Todos</option>'+
-    MAIN_CUTTERS.map(x=>'<option value="'+x.id+'">'+escapeHtml(x.label)+'</option>').join('');
-  if(MAIN_CUTTERS.some(x=>x.id===current))$('#cutterFilter').value=current;
+function populateCuttersForPeriod(from,to){
+  const select=$('#cutterFilter');
+  const current=select.value;
+  const periodRows=state.all.filter(x=>{
+    if(!x.cutAt)return false;
+    if(from&&x.cutAt<from)return false;
+    if(to&&x.cutAt>to)return false;
+    return true;
+  });
+  const cutters=cuttersFromRows(periodRows);
+  select.innerHTML='<option value="all">Todos</option>'+
+    cutters.map(x=>'<option value="'+escapeHtml(x.id)+'">'+escapeHtml(x.label)+'</option>').join('');
+  select.value=cutters.some(x=>x.id===current)?current:'all';
 }
 function applyFilters(){
   if(!state.loaded)return;
   const from=$('#dateFrom').value?new Date($('#dateFrom').value+'T00:00:00'):null;
   const to=$('#dateTo').value?new Date($('#dateTo').value+'T23:59:59'):null;
+  populateCuttersForPeriod(from,to);
   const cutter=$('#cutterFilter').value,type=$('#typeFilter').value;
   const q=normalizeText($('#searchInput').value);
   state.filtered=state.all.filter(x=>{
@@ -250,18 +295,21 @@ function render(){
   renderChart(rows);
 }
 function renderMainCutters(rows,totalPieces){
-  for(const cutter of MAIN_CUTTERS){
+  const cutters=cuttersFromRows(rows);
+  const container=$('#cutterCards');
+  container.innerHTML=cutters.map(cutter=>{
     const items=rows.filter(x=>x.cutterId===cutter.id);
     const pieces=items.reduce((s,x)=>s+(Number.isFinite(x.pieces)?x.pieces:0),0);
     const orders=new Set(items.map(x=>x.orderId).filter(validOrderId)).size;
     const share=totalPieces?pieces/totalPieces*100:0;
-    const prefix=cutter.prefix;
-    $('#'+prefix+'Pieces').textContent=nf.format(pieces)+' peças';
-    $('#'+prefix+'Orders').textContent=nf.format(orders)+' pedido'+(orders===1?'':'s');
-    $('#'+prefix+'Events').textContent=nf.format(items.length)+' evento'+(items.length===1?'':'s');
-    $('#'+prefix+'Share').textContent=share.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
-    $('#'+prefix+'Bar').style.width=Math.max(0,Math.min(100,share))+'%';
-  }
+    const shareText=share.toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';
+    return '<article class="cutter-card panel" style="--cutter-color:'+cutter.color+'">'+
+      '<div class="cutter-head"><span>'+escapeHtml(cutter.label.toLocaleUpperCase('pt-BR'))+'</span><b>'+escapeHtml(shareText)+'</b></div>'+
+      '<strong>'+escapeHtml(nf.format(pieces))+' peças</strong>'+
+      '<div class="share-track"><i style="width:'+Math.max(0,Math.min(100,share))+'%"></i></div>'+
+      '<div class="cutter-meta"><span>'+escapeHtml(nf.format(orders))+' pedido'+(orders===1?'':'s')+'</span><span>'+escapeHtml(nf.format(items.length))+' evento'+(items.length===1?'':'s')+'</span></div>'+
+    '</article>';
+  }).join('');
 }
 function renderTypes(rows){
   const groups=[
@@ -309,15 +357,16 @@ function renderChart(rows){
   canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);ctx.setTransform(ratio,0,0,ratio,0,0);
   ctx.clearRect(0,0,width,height);
 
+  const cutters=cuttersFromRows(rows);
   const keys=[...new Set(rows.filter(x=>x.cutAt&&Number.isFinite(x.pieces)).map(x=>dateKey(x.cutAt)))].sort();
-  $('#chartLegend').innerHTML=MAIN_CUTTERS.map(x=>'<span><i style="background:'+x.color+'"></i>'+escapeHtml(x.label)+'</span>').join('');
+  $('#chartLegend').innerHTML=cutters.map(x=>'<span><i style="background:'+x.color+'"></i>'+escapeHtml(x.label)+'</span>').join('');
   if(!keys.length){
     ctx.fillStyle='#6f7d93';ctx.font='11px DM Sans';ctx.fillText('Sem dados para o período.',20,40);
     $('#chartCaption').textContent='—';
     return;
   }
 
-  const byCutter=new Map(MAIN_CUTTERS.map(c=>[c.id,new Map()]));
+  const byCutter=new Map(cutters.map(c=>[c.id,new Map()]));
   rows.forEach(x=>{
     if(!x.cutAt||!Number.isFinite(x.pieces)||!byCutter.has(x.cutterId))return;
     const k=dateKey(x.cutAt),map=byCutter.get(x.cutterId);
@@ -338,7 +387,7 @@ function renderChart(rows){
   const xAt=i=>keys.length===1?pad.l+gw/2:pad.l+gw*i/(keys.length-1);
   const yAt=value=>pad.t+gh-(value/max)*gh;
 
-  MAIN_CUTTERS.forEach(cutter=>{
+  cutters.forEach(cutter=>{
     const map=byCutter.get(cutter.id);
     ctx.strokeStyle=cutter.color;
     ctx.lineWidth=2.2;
