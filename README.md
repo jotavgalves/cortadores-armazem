@@ -6,9 +6,9 @@ Dashboard de produção de corte para Cloudflare Pages.
 
 O site lê diretamente esta Google Sheets:
 
-`https://docs.google.com/spreadsheets/d/1o9JVEfpR03WCQfLYp8n2DLZe0VckLGWxKMsmxOtq6B8/edit?gid=0#gid=0`
+`https://docs.google.com/spreadsheets/d/1o9JVEfpR03WCQfLYp8n2DLZe0VckLGWxKMsmxOtq6B8/edit?gid=1211266709#gid=1211266709`
 
-Nesta primeira versão, a fonte consolidada é a aba **CORTES EM GERAL** (`gid=0`).
+Nesta primeira versão, a fonte consolidada é a aba **CORTES EM GERAL** (`gid=1211266709`).
 
 O navegador consulta a planilha pelo endpoint CSV/GViz do Google Sheets com `cache: no-store` e um timestamp na URL.
 
@@ -68,3 +68,30 @@ As abas **EDNILSON**, **VERÔNICA** e **LUANA** ficam fora da soma nesta primeir
 ## Cloudflare Pages
 
 O projeto é estático: basta conectar este repositório ao Cloudflare Pages. Não há etapa de build obrigatória.
+
+
+## Mapeamento confirmado das abas
+
+- `CORTES EM GERAL` — gid `1211266709`
+  - A: QUEM CORTOU
+  - B: ID_PEDIDO
+  - E: CORRIDO (1) OU LOCALIZADO (2)
+  - F: TOTAL DE PEÇAS CORTADAS
+  - I: DATA DO CORTE
+- `EDNILSON` — gid `0`
+  - A: ID_PEDIDO
+  - D: tipo de corte
+  - E: total de peças
+  - H: data do corte
+- `VERÔNICA` — gid `1702218443`
+  - A: ID_PEDIDO
+  - D: tipo de corte
+  - E: total de peças
+  - H: data do corte
+- `LUANA` — gid `343854413`
+  - A: ID_PEDIDO
+  - D: tipo de corte
+  - E: total de peças
+  - H: data do corte
+
+O parser continua baseado em cabeçalhos, então mudanças de letra entre abas não afetam a estrutura interna.
