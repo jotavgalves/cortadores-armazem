@@ -2,9 +2,9 @@
 'use strict';
 
 const SPREADSHEET_ID='1o9JVEfpR03WCQfLYp8n2DLZe0VckLGWxKMsmxOtq6B8';
-const SPREADSHEET_URL='https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/edit?gid=0#gid=0';
+const SPREADSHEET_URL='https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/edit?gid=1211266709#gid=1211266709';
 const MAIN_SHEET='CORTES EM GERAL';
-const MAIN_GID='0';
+const MAIN_GID='1211266709';
 const AUTO_REFRESH_MS=60_000;
 const MAIN_CUTTERS=[
   {id:'ednilson',label:'Ednilson'},
