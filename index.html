@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=1">
+  <link rel="stylesheet" href="./styles.css?v=2">
 </head>
 <body>
   <div class="app-shell">
@@ -17,10 +17,10 @@
       <div>
         <div class="eyebrow">PRODUÇÃO • CORTE</div>
         <h1>Cortadores</h1>
-        <p id="syncText">Configure a fonte de dados para começar.</p>
+        <p id="syncText">Conectando à aba CORTES EM GERAL...</p>
       </div>
       <div class="top-actions">
-        <button class="btn" id="openSettings" type="button">Fonte de dados</button>
+        <button class="btn" id="openSheet" type="button">Abrir planilha</button>
         <button class="btn primary" id="refreshBtn" type="button">Atualizar</button>
       </div>
     </header>
@@ -149,30 +149,6 @@
     </section>
   </div>
 
-  <dialog id="settingsDialog">
-    <form method="dialog" class="settings-card">
-      <div class="section-head">
-        <div><span class="eyebrow">CONFIGURAÇÃO</span><h2>Fonte de dados</h2></div>
-        <button class="icon-btn" value="cancel" aria-label="Fechar">×</button>
-      </div>
-      <p class="muted">O link fica salvo somente neste navegador. Nada é gravado no repositório.</p>
-      <label>Link da Google Sheets
-        <input id="sheetUrl" class="input" placeholder="https://docs.google.com/spreadsheets/d/...">
-      </label>
-      <label>Aba principal
-        <input id="sheetName" class="input" value="CORTES EM GERAL">
-      </label>
-      <div class="settings-note">
-        <b>Primeira etapa</b>
-        <span>Usaremos apenas a aba geral. EDNILSON, VERÔNICA e LUANA serão conectadas depois de mapearmos seus cabeçalhos.</span>
-      </div>
-      <div class="dialog-actions">
-        <button class="btn" value="cancel">Cancelar</button>
-        <button class="btn primary" id="saveSource" type="button">Salvar e carregar</button>
-      </div>
-    </form>
-  </dialog>
 
-  <script src="./app.js?v=1"></script>
-</body>
+  <script src="./app.js?v=2"></script>\n</body>
 </html>

@@ -1,28 +1,29 @@
 # Cortadores • Armazém
 
-Dashboard para acompanhar a produção de corte da empresa a partir de abas de uma mesma Google Sheets.
+Dashboard de produção de corte para Cloudflare Pages.
 
-## Princípios da importação
+## Fonte de dados
 
-- **ID_PEDIDO é preservado como veio da planilha.** Não é convertido para número e não tem zeros/hífens removidos.
-- Nomes de cortadores são sanitizados para um nome canônico.
-- Tipo de corte é normalizado para `CORRIDO`, `LOCALIZADO` ou `NÃO INFORMADO`.
-- Total de peças é extraído de células como `560 PÇS PEÇAS`, mantendo o texto bruto e sinalizando casos ambíguos.
-- Data/hora do corte é preservada e usada nos filtros por período.
-- A arquitetura lê os campos pelo **cabeçalho**, não pela letra da coluna. Assim as letras podem mudar entre abas.
-- A aba sem nome/Página5 fica fora por enquanto.
+O site lê diretamente esta Google Sheets:
 
-## Primeira fonte
+`https://docs.google.com/spreadsheets/d/1o9JVEfpR03WCQfLYp8n2DLZe0VckLGWxKMsmxOtq6B8/edit?gid=0#gid=0`
 
-A primeira versão usa a aba **CORTES EM GERAL**. As abas individuais `EDNILSON`, `VERÔNICA` e `LUANA` ficam preparadas para serem mapeadas depois que seus formatos forem enviados.
+Nesta primeira versão, a fonte consolidada é a aba **CORTES EM GERAL** (`gid=0`).
 
-## Uso
+O navegador consulta a planilha pelo endpoint CSV/GViz do Google Sheets com `cache: no-store` e um timestamp na URL.
 
-Abra o dashboard, entre em **Fonte de dados**, cole o link da Google Sheets e informe a aba. A configuração fica somente no navegador (localStorage); o link da planilha não é gravado neste repositório público.
+### Atualização
 
-A planilha precisa permitir a leitura do CSV pelo endpoint do Google Sheets usado pelo navegador.
+- carregamento automático ao abrir o site;
+- atualização automática a cada **60 segundos**;
+- atualização imediata pelo botão **Atualizar**;
+- nova consulta ao voltar para a aba/janela caso os dados estejam há mais de 30 segundos sem atualização.
 
-## Campos reconhecidos na aba geral
+## Normalização
+
+Os dados são lidos pelos cabeçalhos, não pelas letras das colunas.
+
+Campos usados:
 
 - `QUEM CORTOU`
 - `ID_PEDIDO`
@@ -30,4 +31,40 @@ A planilha precisa permitir a leitura do CSV pelo endpoint do Google Sheets usad
 - `TOTAL DE PEÇAS CORTADAS`
 - `DATA DO CORTE`
 
-O parser aceita variações de pontuação, acentos e espaços nos cabeçalhos.
+### ID_PEDIDO
+
+O ID é preservado **exatamente como veio da planilha**. Não é convertido para número, não perde zeros e não tem hífens removidos.
+
+### Cortadores
+
+As variações de nome são sanitizadas para três nomes canônicos:
+
+- **Ednilson**
+- **Verônica**
+- **Luana**
+
+Exemplos como `Ednilson`, `VERÔNICA MARIA DE OLIVEIR` e `LUANA🥰` entram no respectivo cortador. Outros nomes continuam visíveis como registros fora dos três principais.
+
+### Tipo de corte
+
+É normalizado para:
+
+- `CORRIDO`
+- `LOCALIZADO`
+- `NÃO INFORMADO`
+
+### Peças
+
+O sistema extrai a quantidade de textos como `560 PÇS PEÇAS` ou `250 PEÇAS`. Quando há mais de um número na mesma célula, o primeiro é usado e o registro recebe um alerta de revisão.
+
+### Data
+
+A data/hora do corte é usada para filtros por dia, mês e período personalizado e para o gráfico diário.
+
+## Abas individuais
+
+As abas **EDNILSON**, **VERÔNICA** e **LUANA** ficam fora da soma nesta primeira versão para evitar duplicação enquanto `CORTES EM GERAL` for a fonte consolidada. A aba `Página5` também é ignorada por enquanto.
+
+## Cloudflare Pages
+
+O projeto é estático: basta conectar este repositório ao Cloudflare Pages. Não há etapa de build obrigatória.
