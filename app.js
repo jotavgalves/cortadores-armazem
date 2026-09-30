@@ -4,6 +4,7 @@
 const SPREADSHEET_ID='1o9JVEfpR03WCQfLYp8n2DLZe0VckLGWxKMsmxOtq6B8';
 const SPREADSHEET_URL='https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/edit?gid=0#gid=0';
 const MAIN_SHEET='CORTES EM GERAL';
+const MAIN_GID='0';
 const AUTO_REFRESH_MS=60_000;
 const MAIN_CUTTERS=[
   {id:'ednilson',label:'Ednilson'},
@@ -130,8 +131,7 @@ function canonicalRow(row,sourceSheet){
   };
 }
 function endpoint(){
-  const sheet=encodeURIComponent(MAIN_SHEET);
-  return 'https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+sheet+'&t='+Date.now();
+  return 'https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/gviz/tq?tqx=out:csv&gid='+MAIN_GID+'&t='+Date.now();
 }
 function formatDate(d){
   if(!d)return 'Data inválida';
