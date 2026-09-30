@@ -54,24 +54,15 @@ select.input{min-width:180px}
 .kpi strong{display:block;font:800 28px "Manrope";letter-spacing:-.045em;margin:8px 0 2px}
 .kpi small{font-size:9px;color:#6f7c91}
 
-.main-cutters{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
-.cutter-card{padding:16px;border-top-width:2px;min-width:0}
-.cutter-card.ednilson{border-top-color:var(--purple)}
-.cutter-card.luana{border-top-color:var(--blue)}
-.cutter-card.veronica{border-top-color:var(--mint)}
-.cutter-card.deygleison{border-top-color:var(--amber)}
-.cutter-card.nao-informado{border-top-color:var(--slate)}
+.main-cutters{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}
+.main-cutters:empty{display:none}
+.cutter-card{padding:16px;border-top-width:2px;border-top-color:var(--cutter-color,var(--slate));min-width:0}
 .cutter-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .cutter-head span{font-size:10px;letter-spacing:.1em;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cutter-head b{font-size:9px;color:#8995a8;flex-shrink:0}
 .cutter-card strong{display:block;font:800 21px "Manrope";margin:8px 0 10px;letter-spacing:-.03em}
 .share-track{height:5px;border-radius:999px;background:#202938;overflow:hidden}
-.share-track i{display:block;height:100%;width:0;border-radius:inherit;transition:width .25s ease}
-.ednilson .share-track i{background:var(--purple)}
-.luana .share-track i{background:var(--blue)}
-.veronica .share-track i{background:var(--mint)}
-.deygleison .share-track i{background:var(--amber)}
-.nao-informado .share-track i{background:var(--slate)}
+.share-track i{display:block;height:100%;width:0;border-radius:inherit;transition:width .25s ease;background:var(--cutter-color,var(--slate))}
 .cutter-meta{display:flex;justify-content:space-between;gap:8px;margin-top:9px;color:#6f7c91;font-size:8.5px}
 .cutter-meta span{white-space:nowrap}
 
@@ -112,13 +103,11 @@ tr:last-child td{border-bottom:0}
 .empty{text-align:center;color:#6d798e;padding:26px}
 
 @media(max-width:1180px){
-  .main-cutters{grid-template-columns:repeat(3,1fr)}
   .filters{flex-wrap:wrap}
   .filter-group.grow{flex-basis:45%}
 }
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .main-cutters{grid-template-columns:repeat(2,1fr)}
   .insight-grid{grid-template-columns:1fr}
   .type-list{grid-template-columns:1fr}
   .filter-group.grow{flex-basis:100%}
