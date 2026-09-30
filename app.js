@@ -332,7 +332,7 @@ function setQuickRange(mode,renderNow=true){
 
 function clearQuickRange(){
   state.quickRange=null;
-  $('.quick-periods button').forEach(b=>b.classList.remove('active'));
+  $$('.quick-periods button').forEach(b=>b.classList.remove('active'));
 }
 
 $('#openSheet').addEventListener('click',()=>window.open(SPREADSHEET_URL,'_blank','noopener,noreferrer'));
