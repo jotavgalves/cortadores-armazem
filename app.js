@@ -316,7 +316,7 @@ function escapeHtml(value){
 }
 function setQuickRange(mode,renderNow=true){
   state.quickRange=mode;
-  $('.quick-periods button').forEach(b=>b.classList.toggle('active',b.dataset.range===mode));
+  $$('.quick-periods button').forEach(b=>b.classList.toggle('active',b.dataset.range===mode));
   const dates=state.all.map(x=>x.cutAt).filter(Boolean).sort((a,b)=>a-b);
   if(!dates.length)return;
   const latest=dates[dates.length-1];
@@ -340,7 +340,7 @@ $('#refreshBtn').addEventListener('click',()=>loadData());
 ['dateFrom','dateTo'].forEach(id=>$('#'+id).addEventListener('change',()=>{clearQuickRange();applyFilters();}));
 ['cutterFilter','typeFilter'].forEach(id=>$('#'+id).addEventListener('change',applyFilters));
 $('#searchInput').addEventListener('input',applyFilters);
-$('[data-range]').forEach(b=>b.addEventListener('click',()=>setQuickRange(b.dataset.range)));
+$$('[data-range]').forEach(b=>b.addEventListener('click',()=>setQuickRange(b.dataset.range)));
 window.addEventListener('resize',()=>{if(state.loaded)renderChart(state.filtered);});
 window.addEventListener('focus',()=>{if(Date.now()-state.lastSyncAt>30_000)loadData({silent:true});});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-state.lastSyncAt>30_000)loadData({silent:true});});
