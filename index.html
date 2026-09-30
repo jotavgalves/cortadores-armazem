@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0d12">
+  <title>Cortadores • Armazém</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css?v=1">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">PRODUÇÃO • CORTE</div>
+        <h1>Cortadores</h1>
+        <p id="syncText">Configure a fonte de dados para começar.</p>
+      </div>
+      <div class="top-actions">
+        <button class="btn" id="openSettings" type="button">Fonte de dados</button>
+        <button class="btn primary" id="refreshBtn" type="button">Atualizar</button>
+      </div>
+    </header>
+
+    <section class="filters panel">
+      <div class="filter-group grow">
+        <label>Período</label>
+        <div class="date-row">
+          <input id="dateFrom" class="input" type="date">
+          <span>até</span>
+          <input id="dateTo" class="input" type="date">
+        </div>
+      </div>
+      <div class="filter-group">
+        <label>Cortador</label>
+        <select id="cutterFilter" class="input">
+          <option value="all">Todos</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Tipo</label>
+        <select id="typeFilter" class="input">
+          <option value="all">Todos</option>
+          <option value="CORRIDO">Corrido</option>
+          <option value="LOCALIZADO">Localizado</option>
+          <option value="NÃO INFORMADO">Não informado</option>
+        </select>
+      </div>
+      <div class="quick-periods">
+        <button type="button" data-range="today">Hoje</button>
+        <button type="button" data-range="month" class="active">Este mês</button>
+        <button type="button" data-range="all">Tudo</button>
+      </div>
+    </section>
+
+    <div id="banner" class="banner"></div>
+
+    <section class="kpi-grid">
+      <article class="kpi panel">
+        <span>Peças cortadas</span>
+        <strong id="totalPieces">0</strong>
+        <small id="piecesHint">no período selecionado</small>
+      </article>
+      <article class="kpi panel">
+        <span>Eventos de corte</span>
+        <strong id="totalEvents">0</strong>
+        <small>cada linha válida da planilha</small>
+      </article>
+      <article class="kpi panel">
+        <span>Pedidos diferentes</span>
+        <strong id="uniqueOrders">0</strong>
+        <small>ID preservado exatamente como veio</small>
+      </article>
+      <article class="kpi panel">
+        <span>Cortadores ativos</span>
+        <strong id="activeCutters">0</strong>
+        <small>no período selecionado</small>
+      </article>
+    </section>
+
+    <section class="main-cutters">
+      <article class="cutter-card panel ednilson">
+        <div class="cutter-head"><span>EDNILSON</span><b id="ednilsonShare">0%</b></div>
+        <strong id="ednilsonPieces">0 peças</strong>
+        <small id="ednilsonEvents">0 eventos</small>
+      </article>
+      <article class="cutter-card panel veronica">
+        <div class="cutter-head"><span>VERÔNICA</span><b id="veronicaShare">0%</b></div>
+        <strong id="veronicaPieces">0 peças</strong>
+        <small id="veronicaEvents">0 eventos</small>
+      </article>
+      <article class="cutter-card panel luana">
+        <div class="cutter-head"><span>LUANA</span><b id="luanaShare">0%</b></div>
+        <strong id="luanaPieces">0 peças</strong>
+        <small id="luanaEvents">0 eventos</small>
+      </article>
+    </section>
+
+    <section class="grid-2">
+      <article class="panel chart-panel">
+        <div class="section-head">
+          <div><span class="eyebrow">HISTÓRICO</span><h2>Peças por dia</h2></div>
+          <span id="chartCaption">—</span>
+        </div>
+        <canvas id="dailyChart"></canvas>
+      </article>
+
+      <article class="panel">
+        <div class="section-head">
+          <div><span class="eyebrow">TIPO DE CORTE</span><h2>Corrido x localizado</h2></div>
+        </div>
+        <div class="type-list">
+          <div><span>Corrido</span><b id="continuousPieces">0</b><small id="continuousEvents">0 eventos</small></div>
+          <div><span>Localizado</span><b id="localizedPieces">0</b><small id="localizedEvents">0 eventos</small></div>
+          <div><span>Não informado</span><b id="unknownPieces">0</b><small id="unknownEvents">0 eventos</small></div>
+        </div>
+        <div class="quality-box">
+          <span>Qualidade dos dados</span>
+          <b id="qualityText">—</b>
+          <small id="qualityHint">—</small>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel table-panel">
+      <div class="section-head">
+        <div><span class="eyebrow">REGISTROS</span><h2>Eventos de corte</h2></div>
+        <input id="searchInput" class="input search" placeholder="Buscar ID do pedido ou cortador">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Cortador</th>
+              <th>ID_PEDIDO</th>
+              <th>Tipo</th>
+              <th>Peças</th>
+              <th>Origem</th>
+              <th>Leitura</th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="settingsDialog">
+    <form method="dialog" class="settings-card">
+      <div class="section-head">
+        <div><span class="eyebrow">CONFIGURAÇÃO</span><h2>Fonte de dados</h2></div>
+        <button class="icon-btn" value="cancel" aria-label="Fechar">×</button>
+      </div>
+      <p class="muted">O link fica salvo somente neste navegador. Nada é gravado no repositório.</p>
+      <label>Link da Google Sheets
+        <input id="sheetUrl" class="input" placeholder="https://docs.google.com/spreadsheets/d/...">
+      </label>
+      <label>Aba principal
+        <input id="sheetName" class="input" value="CORTES EM GERAL">
+      </label>
+      <div class="settings-note">
+        <b>Primeira etapa</b>
+        <span>Usaremos apenas a aba geral. EDNILSON, VERÔNICA e LUANA serão conectadas depois de mapearmos seus cabeçalhos.</span>
+      </div>
+      <div class="dialog-actions">
+        <button class="btn" value="cancel">Cancelar</button>
+        <button class="btn primary" id="saveSource" type="button">Salvar e carregar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="./app.js?v=1"></script>
+</body>
+</html>
